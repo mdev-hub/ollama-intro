@@ -5,9 +5,6 @@
 #   1. The library is a thin wrapper over the same REST API you just called with curl.
 #   2. Ollama does NOT remember your conversation. WE keep the history and
 #      resend it every turn. That is what makes this feel like a chat.
-#
-# NOTE: this file is incomplete on purpose. It will not work until you merge in
-# the finished code in the next lab step.
 
 import os
 import sys
@@ -24,10 +21,19 @@ SYSTEM_PROMPT = (
 
 def ask(messages):
     """Send the whole conversation to Ollama and stream the reply to the screen."""
-    # TODO 1: Call ollama.chat() with model=MODEL, messages=messages, stream=True
-    #         and options for temperature and num_predict. Loop over the chunks,
-    #         print each piece as it arrives, and build up the full reply string.
-    raise NotImplementedError("TODO 1: call ollama.chat() and stream the reply")
+    reply = ""
+    stream = ollama.chat(
+        model=MODEL,
+        messages=messages,
+        stream=True,
+        options={"temperature": 0.3, "num_predict": 200},
+    )
+    for chunk in stream:
+        piece = chunk["message"]["content"]
+        print(piece, end="", flush=True)
+        reply += piece
+    print()
+    return reply
 
 
 def main():
@@ -51,8 +57,11 @@ def main():
         print("Model: ", end="", flush=True)
         answer = ask(messages)
 
-        # TODO 2: Append the model's own answer to 'messages' so the next turn
-        #         has the full context. Without this, every turn starts over.
+        # Append the model's own answer so the next turn has the full context.
+        # Comment this line out and the model loses everything *it* said (your own
+        # turns stay in the list). To see full amnesia, also change the ask() call
+        # above to:  ask([messages[0], messages[-1]])
+        messages.append({"role": "assistant", "content": answer})
 
         print(f"[history: {len(messages)} messages]\n")
 
